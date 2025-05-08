@@ -1,0 +1,359 @@
+/* Resetar CSS */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, rgba(33, 1, 92, 0.171), rgba(3, 16, 59, 0.9)), url('../img/background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Network Particles */
+.particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.particle-network {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: none;
+}
+
+.particle-node {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.neuron-connection {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent);
+    transform-origin: left center;
+    z-index: -1;
+}
+
+@keyframes moveGrid {
+    0% {
+        transform: translate(-20px, -20px);
+    }
+    100% {
+        transform: translate(20px, 20px);
+    }
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    z-index: 1;
+}
+
+/* Glass Card Effect */
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Logo */
+.logo-container {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.company-logo {
+    max-width: 200px;
+    height: auto;
+    border-radius: 10px;
+    margin: 5px 0 15px;
+    transition: transform 0.3s ease;
+}
+
+.company-logo:hover {
+    transform: scale(1.05);
+}
+
+h1 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 28px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Time Display */
+.time-display {
+    text-align: center;
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.date-display {
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: #e0e0e0;
+}
+
+.clock-display {
+    font-size: 28px;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Form Container */
+.form-container {
+    margin: 15px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #e0e0e0;
+    font-size: 16px;
+}
+
+label i {
+    margin-right: 8px;
+    color: #a0c4ff;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    font-size: 16px;
+    color: #fff;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+input[type="text"]:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(160, 196, 255, 0.1);
+}
+
+/* Button Container */
+.button-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+button {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+button i {
+    margin-right: 8px;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+    color: white;
+}
+
+.btn-logout {
+    background: linear-gradient(135deg, #ff9a9e 0%, #ff5858 100%);
+    color: white;
+}
+
+.btn-login:hover {
+    background: linear-gradient(135deg, #5b86e5 0%, #36d1dc 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 15px rgba(54, 209, 220, 0.3);
+}
+
+.btn-logout:hover {
+    background: linear-gradient(135deg, #ff5858 0%, #ff9a9e 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 15px rgba(255, 88, 88, 0.3);
+}
+
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Status Message */
+.status {
+    margin-top: 25px;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 500;
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.success {
+    background: rgba(39, 174, 96, 0.2);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.error {
+    background: rgba(231, 76, 60, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    margin-top: 10px;
+    padding: 15px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
+/* Ripple Effect */
+.ripple {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Input Focus Effect */
+.input-focused {
+    transform: translateY(-2px);
+}
+
+/* Animation for shake effect */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Network lines effect */
+.particle-node::before {
+    content: "";
+    position: absolute;
+    width: 100px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2), transparent);
+    transform: rotate(var(--rotate, 45deg));
+    transform-origin: left;
+}
+
+.particle-node:nth-child(odd)::before {
+    --rotate: 30deg;
+}
+
+.particle-node:nth-child(3n)::before {
+    --rotate: 60deg;
+}
+
+.particle-node:nth-child(5n)::before {
+    --rotate: 90deg;
+}
+
+.particle-node:nth-child(7n)::before {
+    --rotate: 120deg;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .glass-card {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    .clock-display {
+        font-size: 24px;
+    }
+    
+    .button-container {
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Presensi QR PT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Network particles -->
+    <div class="particles">
+        <div class="particle-network"></div>
+        <div class="particle-node" style="top: 10%; left: 20%;"></div>
+        <div class="particle-node" style="top: 15%; left: 50%;"></div>
+        <div class="particle-node" style="top: 25%; left: 80%;"></div>
+        <div class="particle-node" style="top: 35%; left: 30%;"></div>
+        <div class="particle-node" style="top: 45%; left: 70%;"></div>
+        <div class="particle-node" style="top: 55%; left: 40%;"></div>
+        <div class="particle-node" style="top: 65%; left: 60%;"></div>
+        <div class="particle-node" style="top: 75%; left: 25%;"></div>
+        <div class="particle-node" style="top: 85%; left: 75%;"></div>
+        <div class="particle-node" style="top: 90%; left: 15%;"></div>
+    </div>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="logo-container">
+                <img src="img/logo.png" alt="Logo Perusahaan" class="company-logo">
+            </div>
+            
+            <h1>Sistem Presensi QR</h1>
+            
+            <div class="time-display" id="currentTime">
+                <div class="date-display" id="currentDate"></div>
+                <div class="clock-display" id="clockTime"></div>
+            </div>
+            
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="name"><i class="fas fa-user"></i> Nama Lengkap:</label>
+                    <input type="text" id="name" placeholder="Masukkan nama lengkap">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nik"><i class="fas fa-id-card"></i> NIK Karyawan:</label>
+                    <input type="text" id="nik" placeholder="Masukkan NIK karyawan">
+                </div>
+                
+                <div class="button-container">
+                    <button id="loginBtn" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button id="logoutBtn" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+            
+            <div class="status" id="statusMessage"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 PT. Damar Gayatri Jaya. All Rights Reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
