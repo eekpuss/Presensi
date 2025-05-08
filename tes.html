@@ -1,32 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple GAS Test</title>
+  <title>Final Test Form</title>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+    h1 { color: #333; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { padding: 10px 15px; background: #4285f4; color: white; border: none; 
+             cursor: pointer; border-radius: 4px; }
+    .response { margin-top: 20px; padding: 10px; background: #f5f5f5; min-height: 50px; }
+  </style>
 </head>
 <body>
-  <h1>Simple Form Test</h1>
+  <h1>Final Test Form</h1>
   
-  <!-- Form langsung ke target blanko -->
-  <form method="POST" action="https://script.google.com/macros/s/AKfycbxmwV5dy2vJn4ltGlBC7YnOYxEQ0jjrFM1DofYTIApyQ8JaiRx9PHC-r_Bg_ScPIupiUQ/exec" target="_blank">
-    Nama: <input type="text" name="name" value="Test User"><br><br>
-    NIK: <input type="text" name="nik" value="123456"><br><br>
-    Action:
-    <select name="action">
-      <option value="login">Login</option>
-      <option value="logout">Logout</option>
-    </select><br><br>
-    <input type="hidden" name="loginTime" value="" id="timeField">
-    <input type="submit" value="Submit">
+  <form id="testForm">
+    <div class="form-group">
+      <label for="name">Nama:</label>
+      <input type="text" id="name" name="name" value="Final Test User">
+    </div>
+    
+    <div class="form-group">
+      <label for="nik">NIK:</label>
+      <input type="text" id="nik" name="nik" value="FINAL-123">
+    </div>
+    
+    <div class="form-group">
+      <label for="action">Action:</label>
+      <select id="action" name="action">
+        <option value="login">Login</option>
+        <option value="logout">Logout</option>
+      </select>
+    </div>
+    
+    <button type="submit">Submit Form</button>
   </form>
   
+  <div class="response" id="response">
+    Response akan muncul di sini...
+  </div>
+  
   <script>
-    document.querySelector('form').addEventListener('submit', function() {
-      // Set waktu current untuk login/logout berdasarkan action
-      var action = document.querySelector('select[name="action"]').value;
-      var timeField = document.getElementById('timeField');
+    // Ganti URL ini dengan URL deployment (tanpa /dev)
+    const scriptURL = 'URL_DEPLOYMENT_BARU_TANPA_DEV';
+    
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+      e.preventDefault();
       
-      timeField.name = (action === 'login') ? 'loginTime' : 'logoutTime';
-      timeField.value = new Date().toLocaleString('id-ID');
+      const responseDiv = document.getElementById('response');
+      responseDiv.textContent = 'Mengirim data...';
+      
+      // Persiapkan data
+      const formData = new FormData(this);
+      const action = formData.get('action');
+      
+      // Tambahkan loginTime atau logoutTime
+      if (action === 'login') {
+        formData.append('loginTime', new Date().toLocaleString('id-ID'));
+      } else {
+        formData.append('logoutTime', new Date().toLocaleString('id-ID'));
+      }
+      
+      // Buat iframe tersembunyi
+      const iframeName = 'responseFrame';
+      let iframe = document.getElementById(iframeName);
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = iframeName;
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      
+      // Buat form untuk POST method
+      const postForm = document.createElement('form');
+      postForm.method = 'POST';
+      postForm.action = scriptURL;
+      postForm.target = iframeName;
+      postForm.style.display = 'none';
+      
+      // Kopi semua field dari form original
+      for (const pair of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = pair[0];
+        input.value = pair[1];
+        postForm.appendChild(input);
+      }
+      
+      // Tambahkan dan submit
+      document.body.appendChild(postForm);
+      postForm.submit();
+      
+      // Asumsi sukses setelah timeout
+      setTimeout(function() {
+        responseDiv.textContent = 'Data berhasil dikirim! Periksa Google Spreadsheet.';
+        document.body.removeChild(postForm);
+      }, 2000);
     });
   </script>
 </body>

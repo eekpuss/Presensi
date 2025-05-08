@@ -353,6 +353,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function sendDataToSheet(data) {
         console.log('Mempersiapkan pengiriman data:', data);
         
+        // Dapatkan referensi tombol dan elemen input
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const nameInput = document.getElementById('name');
+        const nikInput = document.getElementById('nik');
+        
+        if (!loginBtn || !logoutBtn || !nameInput || !nikInput) {
+            console.error('Element tidak ditemukan');
+            return;
+        }
+        
         // Tentukan tombol aktif
         const activeBtn = data.action === 'login' ? loginBtn : logoutBtn;
         
@@ -360,60 +371,58 @@ document.addEventListener('DOMContentLoaded', function() {
         activeBtn.disabled = true;
         activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
-        // URL Google Apps Script - GANTI DENGAN URL DEPLOYMENT TERBARU
-        const scriptURL = 'URL_DEPLOYMENT_ANDA';
+        // URL Google Apps Script - GANTI DENGAN URL DEPLOYMENT BARU
+        const scriptURL = 'URL_DEPLOYMENT_BARU_ANDA';
         
-        // Siapkan data lengkap
-        const formData = {
-            name: data.name,
-            nik: data.nik,
-            action: data.action
-        };
-        
-        // Tambahkan waktu login/logout
-        if (data.action === 'login') {
-            formData.loginTime = new Date().toLocaleString('id-ID');
-        } else {
-            formData.logoutTime = new Date().toLocaleString('id-ID');
-        }
-        
-        // Log data yang akan dikirim
-        console.log('Data yang akan dikirim:', formData);
-        
-        // METODE FORM TRADISIONAL: Buat form dan kirim ke iframe tersembunyi
-        // Buat iframe untuk target jika belum ada
-        let iframe = document.getElementById('hidden_frame');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'hidden_frame';
-            iframe.name = 'hidden_frame';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-        }
-        
-        // Buat form baru
+        // Buat form untuk submission langsung (lebih andal)
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = scriptURL;
-        form.target = 'hidden_frame';
         form.style.display = 'none';
         
-        // Tambahkan input fields ke form
-        Object.entries(formData).forEach(([key, value]) => {
+        // Buat iframe untuk target
+        const iframeName = 'hidden_frame_' + Date.now();
+        const iframe = document.createElement('iframe');
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        form.target = iframeName;
+        
+        // Tambahkan data form
+        const addInput = (name, value) => {
             const input = document.createElement('input');
             input.type = 'hidden';
-            input.name = key;
-            input.value = value;
+            input.name = name;
+            input.value = value || '';
             form.appendChild(input);
+        };
+        
+        // Tambahkan semua field
+        addInput('name', data.name);
+        addInput('nik', data.nik);
+        addInput('action', data.action);
+        
+        // Tambahkan waktu login/logout sesuai action
+        if (data.action === 'login') {
+            addInput('loginTime', new Date().toLocaleString('id-ID'));
+        } else {
+            addInput('logoutTime', new Date().toLocaleString('id-ID'));
+        }
+        
+        // Log untuk debugging
+        console.log('Mengirim data via form:', {
+            name: data.name,
+            nik: data.nik,
+            action: data.action,
+            [data.action === 'login' ? 'loginTime' : 'logoutTime']: new Date().toLocaleString('id-ID')
         });
         
-        // Tambahkan form ke body
+        // Tambahkan form ke DOM dan submit
         document.body.appendChild(form);
-        
-        // Submit form
         form.submit();
         
-        // Anggap sukses (karena tidak bisa mendapatkan respons dari iframe)
+        // Asumsi berhasil setelah beberapa detik
         setTimeout(() => {
             // Reset button state
             activeBtn.disabled = false;
@@ -433,9 +442,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
             }
             
-            // Hapus form dari DOM
+            // Hapus form dan iframe
             if (document.body.contains(form)) {
                 document.body.removeChild(form);
+            }
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
             }
         }, 2000);
     }
