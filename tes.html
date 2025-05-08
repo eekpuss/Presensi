@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple GAS Test</title>
+</head>
+<body>
+  <h1>Simple Form Test</h1>
+  
+  <!-- Form langsung ke target blanko -->
+  <form method="POST" action="https://script.google.com/macros/s/AKfycbxmwV5dy2vJn4ltGlBC7YnOYxEQ0jjrFM1DofYTIApyQ8JaiRx9PHC-r_Bg_ScPIupiUQ/exec" target="_blank">
+    Nama: <input type="text" name="name" value="Test User"><br><br>
+    NIK: <input type="text" name="nik" value="123456"><br><br>
+    Action:
+    <select name="action">
+      <option value="login">Login</option>
+      <option value="logout">Logout</option>
+    </select><br><br>
+    <input type="hidden" name="loginTime" value="" id="timeField">
+    <input type="submit" value="Submit">
+  </form>
+  
+  <script>
+    document.querySelector('form').addEventListener('submit', function() {
+      // Set waktu current untuk login/logout berdasarkan action
+      var action = document.querySelector('select[name="action"]').value;
+      var timeField = document.getElementById('timeField');
+      
+      timeField.name = (action === 'login') ? 'loginTime' : 'logoutTime';
+      timeField.value = new Date().toLocaleString('id-ID');
+    });
+  </script>
+</body>
+</html>

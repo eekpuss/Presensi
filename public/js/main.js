@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const clockTimeEl = document.getElementById('clockTime');
     
     // URL endpoint Google Apps Script - PASTIKAN INI SUDAH BENAR
-    const scriptURL = 'https://corsproxy.io/?https://script.google.com/macros/s/AKfycbxmwV5dy2vJn4ItGlBC7YnOYxEQ0jjrFM1DofYTIApyQ8JaiRx9PHC-r_Bg_ScPIupiUQ/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxmwV5dy2vJn4ItGlBC7YnOYxEQ0jjrFM1DofYTIApyQ8JaiRx9PHC-r_Bg_ScPIupiUQ/exec';
     
     // Fungsi untuk membuat efek neuron network
     function createNeuronNetwork() {
@@ -324,13 +324,8 @@ document.addEventListener('DOMContentLoaded', function() {
             name: nameInput.value.trim(),
             nik: nikInput.value.trim(),
             loginTime: now.toLocaleString('id-ID'),
-            logoutTime: '',
             action: 'login'
         };
-        
-        // Tampilkan loading state
-        loginBtn.disabled = true;
-        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
         // Kirim data ke Google Apps Script
         sendDataToSheet(data);
@@ -350,64 +345,75 @@ document.addEventListener('DOMContentLoaded', function() {
             action: 'logout'
         };
         
-        // Tampilkan loading state
-        logoutBtn.disabled = true;
-        logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
         // Kirim data ke Google Apps Script
         sendDataToSheet(data);
     });
     
-    // Fungsi untuk mengirim data ke Google Sheet dengan form submission
+    // Fungsi yang diperbaiki untuk mengirim data ke Google Sheet
     function sendDataToSheet(data) {
-        // Tampilkan loading state
+        console.log('Mempersiapkan pengiriman data:', data);
+        
+        // Tentukan tombol aktif
         const activeBtn = data.action === 'login' ? loginBtn : logoutBtn;
+        
+        // Tampilkan loading state
         activeBtn.disabled = true;
         activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
-        // Pastikan waktu dalam format yang benar
+        // URL Google Apps Script - GANTI DENGAN URL DEPLOYMENT TERBARU
+        const scriptURL = 'URL_DEPLOYMENT_ANDA';
+        
+        // Siapkan data lengkap
+        const formData = {
+            name: data.name,
+            nik: data.nik,
+            action: data.action
+        };
+        
+        // Tambahkan waktu login/logout
         if (data.action === 'login') {
-            data.loginTime = new Date().toLocaleString('id-ID');
+            formData.loginTime = new Date().toLocaleString('id-ID');
         } else {
-            data.logoutTime = new Date().toLocaleString('id-ID');
+            formData.logoutTime = new Date().toLocaleString('id-ID');
         }
         
-        // URL Google Apps Script
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxmwV5dy2vJn4ItGlBC7YnOYxEQ0jjrFM1DofYTIApyQ8JaiRx9PHC-r_Bg_ScPIupiUQ/exec';
+        // Log data yang akan dikirim
+        console.log('Data yang akan dikirim:', formData);
         
-        // Buat iframe tersembunyi untuk target form
-        let targetFrame = document.getElementById('hidden_frame');
-        if (!targetFrame) {
-            targetFrame = document.createElement('iframe');
-            targetFrame.id = 'hidden_frame';
-            targetFrame.name = 'hidden_frame';
-            targetFrame.style.display = 'none';
-            document.body.appendChild(targetFrame);
+        // METODE FORM TRADISIONAL: Buat form dan kirim ke iframe tersembunyi
+        // Buat iframe untuk target jika belum ada
+        let iframe = document.getElementById('hidden_frame');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'hidden_frame';
+            iframe.name = 'hidden_frame';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
         }
         
-        // Buat form untuk dikirim
+        // Buat form baru
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = scriptURL;
         form.target = 'hidden_frame';
         form.style.display = 'none';
         
-        // Tambahkan data ke form
-        for (const key in data) {
+        // Tambahkan input fields ke form
+        Object.entries(formData).forEach(([key, value]) => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = key;
-            input.value = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
+            input.value = value;
             form.appendChild(input);
-        }
+        });
         
-        // Tambahkan form ke dokumen dan submit
+        // Tambahkan form ke body
         document.body.appendChild(form);
         
-        console.log('Mengirim data:', data); // Tambahkan log untuk debugging
+        // Submit form
         form.submit();
         
-        // Tampilkan pesan sukses setelah beberapa detik (simulasi)
+        // Anggap sukses (karena tidak bisa mendapatkan respons dari iframe)
         setTimeout(() => {
             // Reset button state
             activeBtn.disabled = false;
@@ -417,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Tampilkan pesan sukses
             const actionType = data.action === 'login' ? 'Login' : 'Logout';
-            showStatus(`${actionType} berhasil!`, 'success');
+            showStatus(`${actionType} berhasil dikirim!`, 'success');
             
             // Reset form setelah berhasil logout
             if (data.action === 'logout') {
@@ -427,40 +433,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
             }
             
-            // Hapus form setelah digunakan
-            document.body.removeChild(form);
+            // Hapus form dari DOM
+            if (document.body.contains(form)) {
+                document.body.removeChild(form);
+            }
         }, 2000);
     }
-    
-    // Input focus dan blur effects
-    nameInput.addEventListener('focus', function() {
-        this.parentElement.classList.add('input-focused');
-    });
-    
-    nameInput.addEventListener('blur', function() {
-        this.parentElement.classList.remove('input-focused');
-    });
-    
-    nikInput.addEventListener('focus', function() {
-        this.parentElement.classList.add('input-focused');
-    });
-    
-    nikInput.addEventListener('blur', function() {
-        this.parentElement.classList.remove('input-focused');
-    });
-    
-    // Menambahkan tombol keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Enter untuk submit form
-        if (e.key === 'Enter') {
-            // Jika tombol login tidak disabled, klik tombol login
-            if (!loginBtn.classList.contains('disabled')) {
-                loginBtn.click();
-            } 
-            // Jika tombol logout tidak disabled, klik tombol logout
-            else if (!logoutBtn.classList.contains('disabled')) {
-                logoutBtn.click();
-            }
-        }
-    });
+   
+   // Input focus dan blur effects
+   nameInput.addEventListener('focus', function() {
+       this.parentElement.classList.add('input-focused');
+   });
+   
+   nameInput.addEventListener('blur', function() {
+       this.parentElement.classList.remove('input-focused');
+   });
+   
+   nikInput.addEventListener('focus', function() {
+       this.parentElement.classList.add('input-focused');
+   });
+   
+   nikInput.addEventListener('blur', function() {
+       this.parentElement.classList.remove('input-focused');
+   });
+   
+   // Menambahkan tombol keyboard shortcuts
+   document.addEventListener('keydown', function(e) {
+       // Enter untuk submit form
+       if (e.key === 'Enter') {
+           // Jika tombol login tidak disabled, klik tombol login
+           if (!loginBtn.classList.contains('disabled')) {
+               loginBtn.click();
+           } 
+           // Jika tombol logout tidak disabled, klik tombol logout
+           else if (!logoutBtn.classList.contains('disabled')) {
+               logoutBtn.click();
+           }
+       }
+   });
 });

@@ -6,72 +6,161 @@ function doOptions(e) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
+// Fungsi utama untuk memproses permintaan POST
 function doPost(e) {
   var executionStart = new Date().getTime();
   Logger.log("EXECUTION START: " + new Date().toISOString());
   
   try {
-    // Parse request data
+    // Log detail request untuk debugging
     Logger.log("Request Content Type: " + e.contentType);
-    Logger.log("Request Parameters: " + JSON.stringify(e.parameter));
-    Logger.log("Request Post Data: " + e.postData?.contents);
+    Logger.log("Request Parameters: " + JSON.stringify(e.parameter || {}));
+    Logger.log("Request Post Data: " + (e.postData?.contents || "None"));
     
-    // Setup key variables
-    var params = e.parameter;
-    var name = params.name;
-    var nik = params.nik;
-    var action = params.action;
+    // Inisialisasi data dari berbagai kemungkinan sumber
+    var data;
     
-    Logger.log("Extracted Data - Name: " + name + ", NIK: " + nik + ", Action: " + action);
-    
-    // Access spreadsheet
-    try {
-      var ss = SpreadsheetApp.openById('1sglCOorlsdJpg29yVvscoOlXaDzjGcVZ47NthPHGLyo');
-      Logger.log("Spreadsheet opened: " + ss.getName());
-    } catch (ssError) {
-      Logger.log("ERROR OPENING SPREADSHEET: " + ssError.message);
-      throw new Error("Failed to open spreadsheet: " + ssError.message);
+    // Coba ekstrak data dari berbagai format
+    if (e.postData && e.postData.contents) {
+      try {
+        // Coba parse sebagai JSON
+        data = JSON.parse(e.postData.contents);
+        Logger.log("Berhasil parse JSON: " + JSON.stringify(data));
+      } catch (jsonError) {
+        Logger.log("Gagal parse sebagai JSON, mungkin form data: " + jsonError.message);
+        // Jika bukan JSON, gunakan form data dari parameter
+        data = e.parameter || {};
+      }
+    } else {
+      // Gunakan parameter object jika tidak ada postData
+      data = e.parameter || {};
+      Logger.log("Menggunakan data parameter: " + JSON.stringify(data));
     }
     
-    // Access sheet
+    // Ekstrak informasi penting
+    var name = data.name;
+    var nik = data.nik;
+    var action = data.action;
+    
+    Logger.log("Data yang diekstrak - Name: " + name + ", NIK: " + nik + ", Action: " + action);
+    
+    // Validasi data yang diperlukan
+    if (!name || !nik || !action) {
+      throw new Error("Data tidak lengkap. Name: " + name + ", NIK: " + nik + ", Action: " + action);
+    }
+    
+    // Akses spreadsheet dengan penanganan error yang lebih baik
+    var ss;
     try {
-      var allSheets = ss.getSheets();
-      Logger.log("All sheets in spreadsheet: " + allSheets.map(s => s.getName()).join(", "));
-      
-      var sheet = ss.getSheetByName("Presensi");
+      ss = SpreadsheetApp.openById('1sglCOorlsdJpg29yVvscoOlXaDzjGcVZ47NthPHGLyo');
+      Logger.log("Spreadsheet dibuka: " + ss.getName());
+    } catch (ssError) {
+      Logger.log("ERROR MEMBUKA SPREADSHEET: " + ssError.message);
+      throw new Error("Gagal membuka spreadsheet: " + ssError.message);
+    }
+    
+    // Daftar semua sheet untuk debugging
+    var allSheets = ss.getSheets();
+    Logger.log("Semua sheet dalam spreadsheet: " + allSheets.map(s => s.getName()).join(", "));
+    
+    // Akses atau buat sheet Presensi dengan penanganan error yang lebih baik
+    var sheet;
+    try {
+      sheet = ss.getSheetByName("Presensi");
       if (sheet) {
-        Logger.log("Successfully accessed 'Presensi' sheet");
+        Logger.log("Menggunakan sheet 'Presensi'");
       } else {
-        Logger.log("Sheet 'Presensi' not found, trying to use active sheet");
-        sheet = ss.getActiveSheet();
-        Logger.log("Using active sheet: " + sheet.getName());
+        Logger.log("Sheet 'Presensi' tidak ditemukan, membuatnya");
+        sheet = ss.insertSheet("Presensi");
+        // Tambahkan header jika ini sheet baru
+        sheet.appendRow(["Nama", "NIK", "Login Time", "Logout Time", "Tanggal"]);
+        Logger.log("Sheet 'Presensi' berhasil dibuat dengan header");
       }
     } catch (sheetError) {
-      Logger.log("ERROR ACCESSING SHEET: " + sheetError.message);
-      throw new Error("Failed to access sheet: " + sheetError.message);
+      Logger.log("ERROR MENGAKSES SHEET: " + sheetError.message);
+      throw new Error("Gagal mengakses sheet: " + sheetError.message);
     }
     
-    // Get current date
+    // Dapatkan tanggal saat ini
     var today = new Date();
     var formattedDate = Utilities.formatDate(today, 'GMT+7', 'yyyy-MM-dd');
     
-    // Try to append row
+    // Proses data berdasarkan tipe action
     try {
-      // Format data for insertion
-      var rowData = [name, nik, action === 'login' ? params.loginTime : '', 
-                     action === 'logout' ? params.logoutTime : '', formattedDate];
-      
-      Logger.log("Attempting to append row with data: " + rowData.join(", "));
-      sheet.appendRow(rowData);
-      Logger.log("Row successfully appended");
-    } catch (appendError) {
-      Logger.log("ERROR APPENDING ROW: " + appendError.message + "\n" + appendError.stack);
-      throw new Error("Failed to append row: " + appendError.message);
+      if (action === 'login') {
+        // Proses login
+        var loginTime = data.loginTime || today.toLocaleString('id-ID');
+        
+        // Cek apakah sudah login hari ini
+        var lastRow = sheet.getLastRow();
+        var alreadyLoggedIn = false;
+        
+        if (lastRow > 1) {
+          var dataRange = sheet.getRange(2, 1, lastRow - 1, 5);
+          var values = dataRange.getValues();
+          
+          for (var i = 0; i < values.length; i++) {
+            var row = values[i];
+            if (row[1] === nik && row[4] === formattedDate && !row[3]) {
+              alreadyLoggedIn = true;
+              break;
+            }
+          }
+        }
+        
+        if (!alreadyLoggedIn) {
+          // Tambahkan data login baru
+          var rowData = [name, nik, loginTime, '', formattedDate];
+          Logger.log("Menambahkan data login: " + rowData.join(", "));
+          sheet.appendRow(rowData);
+          Logger.log("Data login berhasil ditambahkan");
+        } else {
+          Logger.log("Karyawan sudah login hari ini");
+        }
+      } else if (action === 'logout') {
+        // Proses logout
+        var logoutTime = data.logoutTime || today.toLocaleString('id-ID');
+        
+        // Cari record login karyawan hari ini
+        var lastRow = sheet.getLastRow();
+        var foundRow = -1;
+        
+        if (lastRow > 1) {
+          var dataRange = sheet.getRange(2, 1, lastRow - 1, 5);
+          var values = dataRange.getValues();
+          
+          for (var i = 0; i < values.length; i++) {
+            var row = values[i];
+            if (row[1] === nik && row[4] === formattedDate && !row[3]) {
+              foundRow = i + 2; // +2 karena index dimulai dari 0 dan header di baris 1
+              break;
+            }
+          }
+        }
+        
+        if (foundRow === -1) {
+          // Jika tidak ada record login, buat record baru dengan logout saja
+          var rowData = [name, nik, '', logoutTime, formattedDate];
+          Logger.log("Menambahkan data logout baru: " + rowData.join(", "));
+          sheet.appendRow(rowData);
+          Logger.log("Data logout baru berhasil ditambahkan");
+        } else {
+          // Update record yang ada dengan waktu logout
+          Logger.log("Mengupdate record yang ada di baris " + foundRow + " dengan waktu logout: " + logoutTime);
+          sheet.getRange(foundRow, 4).setValue(logoutTime);
+          Logger.log("Data logout berhasil diupdate");
+        }
+      } else {
+        throw new Error("Action tidak valid: " + action);
+      }
+    } catch (processError) {
+      Logger.log("ERROR MEMPROSES DATA: " + processError.message);
+      throw new Error("Gagal memproses data: " + processError.message);
     }
     
     // Return success response
     var executionTime = new Date().getTime() - executionStart;
-    Logger.log("EXECUTION COMPLETE: Success in " + executionTime + "ms");
+    Logger.log("EKSEKUSI SELESAI: Berhasil dalam " + executionTime + "ms");
     
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
@@ -83,8 +172,8 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
-    Logger.log("FATAL ERROR: " + error.message);
-    Logger.log("Stack trace: " + error.stack);
+    Logger.log("ERROR FATAL: " + error.message);
+    Logger.log("Stack trace: " + (error.stack || "Tidak ada stack trace"));
     
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
@@ -107,18 +196,26 @@ function testSpreadsheetAccess() {
     var sheets = ss.getSheets();
     Logger.log("Sheets in this spreadsheet: " + sheets.map(s => s.getName()).join(", "));
     
-    var activeSheet = ss.getActiveSheet();
-    Logger.log("Active sheet: " + activeSheet.getName());
+    // Coba gunakan sheet Presensi atau buat jika belum ada
+    var sheet = ss.getSheetByName("Presensi");
+    if (!sheet) {
+      Logger.log("Sheet 'Presensi' tidak ditemukan, membuatnya");
+      sheet = ss.insertSheet("Presensi");
+      sheet.appendRow(["Nama", "NIK", "Login Time", "Logout Time", "Tanggal"]);
+      Logger.log("Sheet 'Presensi' berhasil dibuat dengan header");
+    } else {
+      Logger.log("Using sheet: " + sheet.getName());
+    }
     
     var testRow = ["TEST DATA", "TEST NIK", new Date().toLocaleString(), "", new Date().toISOString().split('T')[0]];
     Logger.log("Attempting to write test row: " + testRow.join(", "));
     
-    activeSheet.appendRow(testRow);
+    sheet.appendRow(testRow);
     Logger.log("Test row successfully added!");
     
     // Check if row was actually written
-    var lastRow = activeSheet.getLastRow();
-    var lastRowData = activeSheet.getRange(lastRow, 1, 1, 5).getValues()[0];
+    var lastRow = sheet.getLastRow();
+    var lastRowData = sheet.getRange(lastRow, 1, 1, 5).getValues()[0];
     Logger.log("Verification - last row contains: " + lastRowData.join(", "));
     
     return "Test completed successfully. Check logs for details.";
@@ -131,181 +228,97 @@ function testSpreadsheetAccess() {
 
 // Handle GET requests
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: 'success',
-    message: 'Endpoint aktif'
-  })).setMimeType(ContentService.MimeType.JSON);
-}
-
-// Fungsi untuk memproses login
-function processLogin(sheet, data) {
-  // Dapatkan tanggal hari ini
-  const today = new Date();
-  const formattedDate = Utilities.formatDate(today, 'GMT+7', 'yyyy-MM-dd');
-  
-  // Cek apakah karyawan sudah login hari ini
-  const lastRow = sheet.getLastRow();
-  let alreadyLoggedIn = false;
-  
-  if (lastRow > 1) {
-    const dataRange = sheet.getRange(2, 1, lastRow - 1, 5); // Nama, NIK, Login, Logout, Tanggal
-    const values = dataRange.getValues();
-    
-    for (let i = 0; i < values.length; i++) {
-      const row = values[i];
-      // Cek apakah NIK sama dan tanggal sama (sudah login hari ini)
-      if (row[1] === data.nik && row[4] === formattedDate && !row[3]) {
-        alreadyLoggedIn = true;
-        break;
-      }
-    }
-  }
-  
-  if (alreadyLoggedIn) {
-    throw new Error('Anda sudah login hari ini');
-  }
-  
-  // Tambahkan data login baru
-  sheet.appendRow([
-    data.name,
-    data.nik,
-    data.loginTime,
-    '', // Logout time masih kosong
-    formattedDate
-  ]);
-}
-
-// Fungsi untuk memproses logout
-function processLogout(sheet, data) {
-  // Dapatkan tanggal hari ini
-  const today = new Date();
-  const formattedDate = Utilities.formatDate(today, 'GMT+7', 'yyyy-MM-dd');
-  
-  // Cari record login karyawan hari ini
-  const lastRow = sheet.getLastRow();
-  let foundRow = -1;
-  
-  if (lastRow > 1) {
-    const dataRange = sheet.getRange(2, 1, lastRow - 1, 5); // Nama, NIK, Login, Logout, Tanggal
-    const values = dataRange.getValues();
-    
-    for (let i = 0; i < values.length; i++) {
-      const row = values[i];
-      // Cek apakah NIK sama, tanggal sama, dan belum logout (kolom logout kosong)
-      if (row[1] === data.nik && row[4] === formattedDate && !row[3]) {
-        foundRow = i + 2; // +2 karena index dimulai dari 0 dan header di baris 1
-        break;
-      }
-    }
-  }
-  
-  if (foundRow === -1) {
-    // Jika tidak ditemukan record login, langsung buat record baru dengan logout saja
-    // Untuk mengakomodasi kasus khusus atau shift malam
-    sheet.appendRow([
-      data.name,
-      data.nik,
-      '', // Login time kosong
-      data.logoutTime,
-      formattedDate
-    ]);
+  if (e && e.parameter && e.parameter.action === "diagnostics") {
+    return ContentService.createTextOutput(runDiagnostics())
+      .setMimeType(ContentService.MimeType.TEXT);
   } else {
-    // Update record yang sudah ada dengan waktu logout
-    sheet.getRange(foundRow, 4).setValue(data.logoutTime);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      message: 'Endpoint aktif. Gunakan ?action=diagnostics untuk menjalankan diagnostik.'
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// Fungsi untuk mengirim data ke Google Sheet
-function sendDataToSheet(data) {
-    // Tampilkan loading state
-    const activeBtn = data.action === 'login' ? loginBtn : logoutBtn;
-    activeBtn.disabled = true;
-    activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+// Fungsi untuk menjalankan diagnostik menyeluruh
+function runDiagnostics() {
+  try {
+    Logger.log("Menjalankan diagnostik...");
     
-    // Buat form data untuk mengirim secara tradisional
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = scriptURL;
-    form.target = '_blank'; // Buka di tab baru (opsional)
-    form.style.display = 'none';
+    // Test 1: Akses spreadsheet
+    var ss = SpreadsheetApp.openById('1sglCOorlsdJpg29yVvscoOlXaDzjGcVZ47NthPHGLyo');
+    Logger.log("Test 1: Berhasil mengakses spreadsheet - " + ss.getName());
     
-    // Tambahkan data sebagai input hidden
-    for (const key in data) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = data[key];
-        form.appendChild(input);
+    // Test 2: Daftar semua sheet
+    var sheets = ss.getSheets();
+    Logger.log("Test 2: Daftar sheet - " + sheets.map(s => s.getName()).join(", "));
+    
+    // Test 3: Cek atau buat sheet Presensi
+    var presensiSheet = ss.getSheetByName("Presensi");
+    if (!presensiSheet) {
+      Logger.log("Test 3: Sheet Presensi tidak ditemukan, membuatnya");
+      presensiSheet = ss.insertSheet("Presensi");
+      presensiSheet.appendRow(["Nama", "NIK", "Login Time", "Logout Time", "Tanggal"]);
+      Logger.log("Test 3: Sheet Presensi berhasil dibuat dengan header");
+    } else {
+      Logger.log("Test 3: Sheet Presensi ditemukan");
     }
     
-    // Tambahkan form ke body dan submit
-    document.body.appendChild(form);
-    form.submit();
+    // Test 4: Tulis data test
+    var testData = ["TEST DIAGNOSTIK", "DIAG-" + new Date().getTime(), 
+                   new Date().toLocaleString('id-ID'), "", 
+                   Utilities.formatDate(new Date(), 'GMT+7', 'yyyy-MM-dd')];
     
-    // Hapus form setelah submit
-    setTimeout(() => {
-        document.body.removeChild(form);
-        
-        // Reset button state
-        activeBtn.disabled = false;
-        activeBtn.innerHTML = data.action === 'login' ? 
-            '<i class="fas fa-sign-in-alt"></i> Login' : 
-            '<i class="fas fa-sign-out-alt"></i> Logout';
-        
-        // Tampilkan pesan sukses (asumsi berhasil)
-        showStatus(`${data.action === 'login' ? 'Login' : 'Logout'} berhasil dikirim!`, 'success');
-        
-        // Reset form setelah berhasil logout
-        if (data.action === 'logout') {
-            setTimeout(() => {
-                nameInput.value = '';
-                nikInput.value = '';
-            }, 2000);
-        }
-    }, 3000);
+    presensiSheet.appendRow(testData);
+    Logger.log("Test 4: Berhasil menulis data test - " + testData.join(", "));
+    
+    // Test 5: Verifikasi data tertulis
+    var lastRow = presensiSheet.getLastRow();
+    var lastRowData = presensiSheet.getRange(lastRow, 1, 1, 5).getValues()[0];
+    Logger.log("Test 5: Verifikasi baris terakhir - " + lastRowData.join(", "));
+    
+    // Test 6: Simulasi doPost
+    var mockPostData = {
+      parameter: {
+        name: "USER SIMULASI",
+        nik: "SIM-" + new Date().getTime(),
+        action: "login",
+        loginTime: new Date().toLocaleString('id-ID')
+      }
+    };
+    
+    Logger.log("Test 6: Simulasi doPost dengan data - " + JSON.stringify(mockPostData.parameter));
+    var response = doPost(mockPostData);
+    Logger.log("Test 6: Hasil simulasi doPost - " + response.getContent());
+    
+    return "Diagnostik selesai. Lihat log untuk detail.";
+  } catch (error) {
+    Logger.log("ERROR DIAGNOSTIK: " + error.message);
+    Logger.log("Stack trace: " + error.stack);
+    return "Diagnostik gagal: " + error.message;
+  }
 }
 
-// Fungsi untuk mendapatkan data presensi (bisa digunakan untuk dashboard/reporting)
-function getAttendanceData() {
-  const ss = SpreadsheetApp.openById('1sglCOorlsdJpg29yVvscoOlXaDzjGcVZ47NthPHGLyo');
-  const sheet = ss.getSheetByName('Presensi');
-  
-  if (!sheet) {
-    return {
-      success: false,
-      error: 'Sheet tidak ditemukan'
-    };
-  }
-  
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    return {
-      success: true,
-      data: []
-    };
-  }
-  
-  const dataRange = sheet.getRange(2, 1, lastRow - 1, 5);
-  const values = dataRange.getValues();
-  
-  const attendanceData = values.map(row => ({
-    name: row[0],
-    nik: row[1],
-    loginTime: row[2],
-    logoutTime: row[3],
-    date: row[4]
-  }));
-  
-  return {
-    success: true,
-    data: attendanceData
-  };
-}
-
-// Fungsi untuk membuat web app dapat diakses oleh siapa saja
+// Fungsi untuk setup aplikasi
 function setup() {
   ScriptApp.getProjectTriggers().forEach(trigger => ScriptApp.deleteTrigger(trigger));
   
-  PropertiesService.getScriptProperties().setProperty('SETUP_DONE', 'true');
-  Logger.log('Setup selesai');
+  // Pastikan spreadsheet dan sheet Presensi ada
+  try {
+    var ss = SpreadsheetApp.openById('1sglCOorlsdJpg29yVvscoOlXaDzjGcVZ47NthPHGLyo');
+    var sheet = ss.getSheetByName("Presensi");
+    
+    if (!sheet) {
+      sheet = ss.insertSheet("Presensi");
+      sheet.appendRow(["Nama", "NIK", "Login Time", "Logout Time", "Tanggal"]);
+      Logger.log("Sheet Presensi dibuat dengan header");
+    }
+    
+    PropertiesService.getScriptProperties().setProperty('SETUP_DONE', 'true');
+    Logger.log('Setup selesai');
+    
+    return "Setup berhasil. Spreadsheet dan sheet Presensi siap digunakan.";
+  } catch (error) {
+    Logger.log("ERROR SETUP: " + error.message);
+    return "Setup gagal: " + error.message;
+  }
 }
